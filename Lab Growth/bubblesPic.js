@@ -7,7 +7,7 @@ var margin = {
         left: 20
     },
     width = 2000 - margin.right - margin.left,
-    height = 1000 - margin.top - margin.bottom;
+    height = 800 - margin.top - margin.bottom;
    // radius2 = width / 2
 
 d3.csv("./labData.csv")
@@ -16,8 +16,18 @@ d3.csv("./labData.csv")
         var svg2 = d3.select("body").append("svg")
             .attr("width", width)
             .attr("height", height)
-            .attr("id", "svg2")
+            .attr("id", "svg2") 
             .attr('transform', "translate(30, 25)")
+
+        svg2.append("rect")
+            .attr("width", "100%")
+            .attr("height", "100%")
+            .style("fill", function (d, i) {
+                return "url(#chromosome)";
+            })
+            .style("opacity", .15);
+
+        
 
         // parse data
         data.forEach(function (d) {
@@ -46,7 +56,40 @@ d3.csv("./labData.csv")
                 return "pics/" + d.image;
             });
 
-        var string = "hi";
+
+        defs
+            .append("pattern")
+            .attr("class", "images-pattern")
+            .attr("id", function (d) {
+                return "chromosome"
+            })
+            .attr("height", "100%")
+            .attr("width", "100%")
+            .attr("patternContentUnits", "objectBoundingBox")
+            .append("image")
+            .attr("height", 1)
+            .attr("width", 1)
+            .attr("preserveAspectRatio", "none")
+            .attr("xlink:href", function (d) {
+                return "pics/" + "chromosome.png"
+            });
+
+            // defs
+            // .append("pattern")
+            // .attr("class", "images-pattern")
+            // .attr("id", function (d) {
+            //     return "software"
+            // })
+            // .attr("height", "100%")
+            // .attr("width", "100%")
+            // .attr("patternContentUnits", "objectBoundingBox")
+            // .append("image")
+            // .attr("height", 1)
+            // .attr("width", 1)
+            // .attr("preserveAspectRatio", "none")
+            // .attr("xlink:href", function (d) {
+            //     return "pics/" + "software.png"
+            // });
 
         var row = 0;
         var cx = 25;
@@ -96,26 +139,6 @@ d3.csv("./labData.csv")
             .attr("font-size", "14px")
             .attr("transform", "translate(" + (width/9) + ", " + width / 80 + ")")
             .attr("id", "name");
-
-        // nameGroup.append("rect")
-        //     .attr("width", width / 5)
-        //     .attr("height", width / 15)
-        //     .attr("class", "shape")
-        //     .attr("transform", "translate(" + (width/9) + ", " + width / 40 + ")")
-        //     //.attr("fill", "white")
-        //     //.attr("visibility", "hidden")
-        
-        // nameGroup.append("text")
-        //     .attr("class", "wrap")
-        //     .text(function(d) {
-        //         return d.bio
-        //     })
-        //     .attr("font-family", "sans-serif")
-        //     .attr("font-size", "14px")
-        //     .attr("id", "bio")
-        //     .attr("transform", "translate(" + (width/9) + ", " + width / 40 + ")");
-
-            //.attr("transform", "translate(" + (width/9) + ", " + width / 40 + ")")
         
         
         for(person of window.elementData) {
@@ -131,8 +154,6 @@ d3.csv("./labData.csv")
             .render();
         };
 
-
-    //console.log(d3.selectAll("#d3plus-textBox-0"))
        d3.selectAll("#d3plus-textBox-0").selectAll("*").attr("transform", "translate(" + (width/9) + ", " + width / 40 + ")")
        
 

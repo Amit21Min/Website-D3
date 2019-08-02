@@ -119,6 +119,15 @@ d3.csv('chartData.txt')
       .append("g")
       .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
+
+      // svg.append("rect")
+      // .attr("width", "100%")
+      // .attr("height", "100%")
+      // .style("fill", "url(#software)")
+      // .style("opacity", .2);
+
+
+
     var counter = -1;
 
     svg.append("g").selectAll("g")
@@ -136,7 +145,7 @@ d3.csv('chartData.txt')
       })
       .enter().append("rect")
       .attr("x", function (d, i) {
-        return x(d.data.year);
+        return -1000;
       })
       .attr("id", function (d, i) {
         counter++;
@@ -153,6 +162,38 @@ d3.csv('chartData.txt')
       //.attr("y", height)
       .style("opacity", 1)
       .duration(100);
+
+      // transition in with a "stacking up" elastic ease
+      svg.selectAll("g").selectAll("rect")
+      .transition()
+      .duration(function(d, i) {
+        return Math.random() * 200 + i * 500;
+      })
+      .ease(d3.easeElastic)
+      .attr("x", function (d, i) {
+        return x(d.data.year);
+      });
+
+      // transition in staggered left to right
+      svg.selectAll("g").selectAll("rect")
+      .transition()
+      .duration(function(d, i) {
+        return Math.random() * 150 + i * 150;
+      })
+      .attr("x", function (d, i) {
+        return x(d.data.year);
+      });
+
+      // all blocks random
+      svg.selectAll("g").selectAll("rect")
+      .transition()
+      .duration(function(d, i) {
+        return Math.random() * 2000;
+      })
+      .attr("x", function (d, i) {
+        return x(d.data.year);
+      });
+
 
     var rects = svg.selectAll("g").selectAll("rect");
 
