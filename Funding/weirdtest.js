@@ -20,7 +20,7 @@ d3.csv("funding.csv").then(function (data) {
     });
 
     var importedGrants = data.sort(function (a, b) {
-        return b.duration >= a.duration;
+        return b.duration > a.duration;
     })
 
     var labGrants = importedGrants.filter(grant => grant.type === "Lab")
@@ -72,12 +72,12 @@ d3.csv("funding.csv").then(function (data) {
         .attr("height", 500);
 
     var labBarPositions = []
-    for (grant of labGrants) {
+    for (grant of importedGrants) {
         labBarPositions.push([])
     }
 
     var labBars = labChartBody.selectAll("rect")
-        .data(labGrants)
+        .data(importedGrants)
         .enter()
         .append("rect")
         .attr("width", function (d) {
@@ -125,7 +125,12 @@ d3.csv("funding.csv").then(function (data) {
             var number = Math.random();
             number = number < 0.2 ? number + 0.2 : number;
 
-            return d3.interpolatePuBu(number);
+            if(labGrants.includes(d)) {
+                return d3.interpolatePuBu(number);
+            }else {
+                return d3.interpolatePuRd(number);
+            }
+    
         })
         .on("click", function(d) {
             var currX = parseInt(d3.select(this).attr("x"))
@@ -142,82 +147,10 @@ d3.csv("funding.csv").then(function (data) {
         return a.length === 0
     }).length
 
-    var personalChartBody = canvas.append("g")
-        .attr("transform", function () {
-            var value = "translate(100,"
-            var yValue = (numberOfLabRows + 1) * 50;
-            value += yValue + ")"
-            return value;
-        })
-        .attr("width", width)
-        .attr("height", 500);
-
-    var personalBarPositions = []
-    for (grant of personalGrants) {
-        personalBarPositions.push([])
-    }
-    var personalBars = personalChartBody.selectAll("rect")
-        .data(personalGrants)
-        .enter()
-        .append("rect")
-        .attr("width", function (d) {
-            var startDate = d.start;
-            var duration = d.duration;
-
-            var scaledStartPosition = widthScale(startDate);
-            var scaledEndPosition = widthScale(startDate + (duration / 12));
-
-            return scaledEndPosition - scaledStartPosition;
-        })
-        .attr("height", 30)
-        .attr("x", -500)
-        .attr("y", function (d, i) {
-
-            //prob not the cleanest, see if anything else can be done
-            for (var i = 0; i < personalBarPositions.length; i++) {
-
-                if (personalBarPositions[i].length === 0) {
-                    personalBarPositions[i].push(d)
-                    console.log(d.start + " placed in row " + i);
-                    return (50 * i)
-                }
-
-                for (var j = 0; j < personalBarPositions[i].length; j++) {
-                    var currentGrant = personalBarPositions[i][j];
-                    var nextGrant = personalBarPositions[i][j + 1];
-
-                    if (!checkOverlap(d, currentGrant) && (nextGrant === undefined || !checkOverlap(d, nextGrant))) {
-                        //if there is an open spot, place the bar
-                        console.log(d.start + " placed in row " + i);
-                        personalBarPositions[i].push(d);
-                        return (50 * i)
-                    } else {
-                        break;
-                    }
-                }
-            }
-
-        })
-        .attr("id", "personalBars")
-        .attr("rx", 8)
-        .attr("ry", 8)
-        .attr("fill", function (d, i) {
-            var number = Math.random();
-            number = number < 0.2 ? number + 0.2 : number;
-
-            return d3.interpolatePuRd(number);
-        })
-        .attr("visibility", "hidden");
-
-
-    var numberOfPersonalRows = personalBarPositions.length - personalBarPositions.filter(function (a) {
-        return a.length === 0
-    }).length
-
     var axis = canvas.append("g")
         .attr("transform", function (d, i) {
             var value = "translate(100,"
-            var yValue = (numberOfLabRows + numberOfPersonalRows + 1) * 50;
+            var yValue = (numberOfLabRows + 1) * 50;
             value += yValue + ")"
             console.log(value)
             return value;
@@ -228,18 +161,6 @@ d3.csv("funding.csv").then(function (data) {
     //animations
 
     d3.selectAll("#labBars")
-        .transition()
-        .ease(d3.easeElastic)
-        .duration(function(d) {
-            return (Math.random() + 0.5) * 1500
-        })
-        .attr("x", function (d, i) {
-            var startDate = d.start;
-            return widthScale(startDate);
-        })
-        .attr("visibility", "visible");
-
-    d3.selectAll("#personalBars")
         .transition()
         .ease(d3.easeElastic)
         .duration(function(d) {
