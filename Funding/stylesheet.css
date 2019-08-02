@@ -1,0 +1,12 @@
+rect:hover {
+	fill: rgb(53, 54, 128);;
+}
+
+.axis { 
+    font: 14px sans-serif; 
+}
+
+text {
+    font: 14px sans-serif; 
+ 
+}
