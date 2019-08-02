@@ -33,7 +33,7 @@ var parseTime = d3.timeParse("%b %Y")
 
 // Load stocks data
 // Ex: 0: {symbol: "MSFT", date: "Jan 2000", price: "39.81"}
-d3.csv('rawdata.txt')
+d3.csv('chartData.txt')
   .then(function (raw) {
 
     window.elementRaw = raw;

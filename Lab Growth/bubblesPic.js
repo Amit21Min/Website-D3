@@ -10,7 +10,7 @@ var margin = {
     height = 1000 - margin.top - margin.bottom;
    // radius2 = width / 2
 
-d3.csv("./data.csv")
+d3.csv("./labData.csv")
     .then(function (data) {
         console.log(data);
         var svg2 = d3.select("body").append("svg")
@@ -43,7 +43,6 @@ d3.csv("./data.csv")
             .attr("width", 1)
             .attr("preserveAspectRatio", "none")
             .attr("xlink:href", function (d) {
-                console.log("pics/" + d.image)
                 return "pics/" + d.image;
             });
 
