@@ -4,6 +4,8 @@ d3.csv("funding.csv").then(function (data) {
     //     return b.duration < a.start;
     // })
 
+    //THIS IS A TEST
+
     data.forEach(function(d) {
         d.duration = +d.duration;
         d.amount = +d.amount;
