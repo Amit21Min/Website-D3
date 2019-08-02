@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script src="https://d3js.org/d3.v5.js"></script>
+    <link rel="stylesheet" href="stylesheet.css">
+</head>
+
+<body>
+
+    <!-- <script>
+        d3.json("names.json").then(function (data) {
+
+            console.log(data);
+
+            var getMaxAge = function (d) {
+                var max = 0;
+                for (person of d) {
+                    if (person.age > max) {
+                        max = person.age;
+                    }
+                }
+                return max;
+            };
+
+            var width = 1000;
+            var height = 1000;
+
+            //scales value to a color, returns a function
+            var widthScale = d3.scaleLinear()
+                .domain([0, getMaxAge(data)])
+                .range([0, width / 2]);
+
+            var colorScale = d3.scaleLinear()
+                .domain([0, getMaxAge(data)])
+                .range(["red", "blue"]);
+
+            var axis = d3.axisBottom()
+                .scale(widthScale);
+
+            var canvas = d3.select("body")
+                .append("svg")
+                .attr("width", 1000)
+                .attr("height", 1000)
+                .append("g")
+                .attr("transform", "translate(50,50)")
+
+            var barChart = canvas.selectAll("rect")
+                .data(data)
+                .enter()
+                .append("rect")
+                .attr("width", function (d) { //scales width of bars to width of canvas
+                    return widthScale(d.age);
+                })
+                .attr("height", 25)
+                .attr("y", function (d, i) {
+                    return i * 30 -20;
+                })
+                .attr("x", -5)
+                .attr("fill", function (d) {
+                    return colorScale(d.age);
+                });
+
+            var barChartText = canvas.selectAll("text")
+                .data(data)
+                .enter()
+                .append("text")
+                .attr("y", function (d, i) {
+                    return i * 30;
+                })
+                .attr("fill", "white")
+                .text(function (d) {
+                    console.log(d.name);
+                    return d.name;
+                });
+
+            var barAxis = canvas.append("g")
+                .attr("transform", "translate(0,200)")
+                .call(axis);
+
+
+        });
+    </script> -->
+
+    <script src="testscript.js"></script>
+</body>
+
+</html>
