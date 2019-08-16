@@ -3,4 +3,4 @@ Yoli Meydan and Amit Min are currently creating data-driven visualizations for t
 View the Lab Growth - Click the stacked bar chart! (pictures omitted) http://bl.ocks.org/Amit21Min/ed1819de1fef3dcfaaae72af3550963d/d078c64da69fe2b84432ef1eca9ece337f142120
 
 View Lab Funding
-https://bl.ocks.org/meydany/d35b16b72edd0735e522be92abef9559/b499990d59df7512a4bf9c61e62d638f63cf6a1e
+https://bl.ocks.org/meydany/6f0a5209af450753ccf97b4430ecd57a/e0ec504f02e3d2b60cfe4efbb5007ef5417097aa
