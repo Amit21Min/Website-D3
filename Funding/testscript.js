@@ -1,11 +1,8 @@
 d3.csv("funding.csv").then(function (data) {
 
-    // data.sort(function (a, b) {
-    //     return b.duration < a.start;
-    // })
-
-    //THIS IS A TEST
-
+    /* convert values into integers and format into more readable and usable form
+    *  yy/mm/dd date is converted into a single number 
+    */
     data.forEach(function (d) {
         d.duration = +d.duration;
         d.amount = +d.amount;
@@ -19,13 +16,16 @@ d3.csv("funding.csv").then(function (data) {
         d.start = year + (month / 12) + (day / 365) - (1 / 12) - (1 / 365);
     });
 
+    // grants sorted by duration so that larger bars will be placed higher up on the chart to create a "pyramid" look
     var importedGrants = data.sort(function (a, b) {
         return b.duration >= a.duration;
     })
 
+    // seperate lab and personal grants into two lists because each will be manipulated and used seperately
     var labGrants = importedGrants.filter(grant => grant.type === "Lab")
     var personalGrants = importedGrants.filter(grant => grant.type === "Student")
 
+    // yearRange will store unique date values so that the size and scale of the chart can be determined
     var yearRange = function (grants) {
         var years = [];
         for (grant of grants) {
@@ -39,17 +39,19 @@ d3.csv("funding.csv").then(function (data) {
     var minYear = Math.floor(d3.min(yearRange));
     var maxYear = Math.floor(d3.max(yearRange)) + 1;
 
+    /* EDGE CASE
+    * get the ending date of the grant with the longest duration because it might go past maxYear
+    */
     var maxDurationEnd = Math.floor(getGrantBounds(importedGrants[0]).end);
 
     if (maxDurationEnd > maxYear) {
         maxYear = maxDurationEnd + 1;
     }
 
-    console.log(maxYear + " " + minYear)
-
     var width = 1000;
     var height = 1000;
 
+    // scale that maps a date value to a position along the x-axis 
     var widthScale = d3.scaleLinear()
         .domain([minYear, maxYear])
         .range([0, width * 0.8]);
@@ -63,14 +65,16 @@ d3.csv("funding.csv").then(function (data) {
         .append("svg")
         .attr("width", width)
         .attr("height", height)
-        .append("g")
         .attr("transform", "translate(20,0)");
 
+    // <g> element that holds all the lab bars
     var labChartBody = canvas.append("g")
         .attr("transform", "translate(100)")
         .attr("width", width)
-        .attr("height", 500);
+        .attr("height", 500)
+        .attr("id", "lab-bars");
 
+    // 2D array used to keep track of bar positions, used to check for overlaps
     var labBarPositions = []
     for (grant of labGrants) {
         labBarPositions.push([])
@@ -81,11 +85,14 @@ d3.csv("funding.csv").then(function (data) {
         .enter()
         .append("rect")
         .attr("width", function (d) {
-            var startDate = d.start;
-            var duration = d.duration;
+            // width (length) of bar is determined by start date and duration
+            var grantBounds = getGrantBounds(d);
+
+            var startDate = grantBounds.start;
+            var endDate = grantBounds.end;
 
             var scaledStartPosition = widthScale(startDate);
-            var scaledEndPosition = widthScale(startDate + (duration / 12));
+            var scaledEndPosition = widthScale(endDate);
 
             return scaledEndPosition - scaledStartPosition;
         })
@@ -93,32 +100,35 @@ d3.csv("funding.csv").then(function (data) {
         .attr("x", -500)
         .attr("y", function (d, i) {
 
-            //prob not the cleanest, see if anything else can be done
+            // stores bars in a 2D array in order to check for overlap with other bars
             for (var i = 0; i < labBarPositions.length; i++) {
 
+                // no bars in this row yet, so don't need to check for any overlap
                 if (labBarPositions[i].length === 0) {
                     labBarPositions[i].push(d)
-                    console.log(d.start + " placed in row " + i);
                     return 50 + (50 * i)
                 }
 
                 for (var j = 0; j < labBarPositions[i].length; j++) {
                     var currentGrant = labBarPositions[i][j];
                     var nextGrant = labBarPositions[i][j + 1];
+                    var previousGrant = labBarPositions[i][j - 1];
 
-                    if (!checkOverlap(d, currentGrant) && (nextGrant === undefined || !checkOverlap(d, nextGrant))) {
-                        //if there is an open spot, place the bar
-                        console.log(d.start + " placed in row " + i);
+                    // checks for overlap with current, next, and previous bars
+                    var currentOverlap = checkOverlap(d, currentGrant);
+                    var nextOverlap = !(nextGrant === undefined || !checkOverlap(d, nextGrant));
+                    var previousOverlap = !(previousGrant === undefined || !checkOverlap(d, previousGrant));
+                    
+                    if (!currentOverlap && !nextOverlap && !previousOverlap) {
+                        //open spot is found!
                         labBarPositions[i].push(d);
                         return 50 + (50 * i)
-                    } else {
-                        break;
-                    }
+                    } 
                 }
             }
 
         })
-        .attr("id", "labBars")
+        .attr("id", "lab-bar")
         .attr("rx", 8)
         .attr("ry", 8)
         .attr("fill", function (d, i) {
@@ -128,20 +138,17 @@ d3.csv("funding.csv").then(function (data) {
             return d3.interpolatePuBu(number);
         })
         .on("click", function(d) {
-            var currX = parseInt(d3.select(this).attr("x"))
-            console.log(currX)
-            d3.select(this)
-            .transition()
-            .ease(d3.easeElastic)
-            .duration(1000)
-            .attr("x", currX + 50)
+            // do something on click
         })
         .attr("visibility", "hidden");
 
+    // counts the number of rows that actually have bars placed in them
     var numberOfLabRows = labBarPositions.length - labBarPositions.filter(function (a) {
         return a.length === 0
     }).length
 
+
+    // translate the personal chart body depending on the number of lab bars
     var personalChartBody = canvas.append("g")
         .attr("transform", function () {
             var value = "translate(100,"
@@ -152,6 +159,7 @@ d3.csv("funding.csv").then(function (data) {
         .attr("width", width)
         .attr("height", 500);
 
+    // same concept for person bars, 2D array to store and manage positions
     var personalBarPositions = []
     for (grant of personalGrants) {
         personalBarPositions.push([])
@@ -161,11 +169,13 @@ d3.csv("funding.csv").then(function (data) {
         .enter()
         .append("rect")
         .attr("width", function (d) {
-            var startDate = d.start;
-            var duration = d.duration;
+            var grantBounds = getGrantBounds(d);
+
+            var startDate = grantBounds.start;
+            var endDate = grantBounds.end;
 
             var scaledStartPosition = widthScale(startDate);
-            var scaledEndPosition = widthScale(startDate + (duration / 12));
+            var scaledEndPosition = widthScale(endDate);
 
             return scaledEndPosition - scaledStartPosition;
         })
@@ -178,27 +188,29 @@ d3.csv("funding.csv").then(function (data) {
 
                 if (personalBarPositions[i].length === 0) {
                     personalBarPositions[i].push(d)
-                    console.log(d.start + " placed in row " + i);
-                    return (50 * i)
+                    return 50 * i
                 }
 
                 for (var j = 0; j < personalBarPositions[i].length; j++) {
                     var currentGrant = personalBarPositions[i][j];
                     var nextGrant = personalBarPositions[i][j + 1];
+                    var previousGrant = personalBarPositions[i][j - 1];
 
-                    if (!checkOverlap(d, currentGrant) && (nextGrant === undefined || !checkOverlap(d, nextGrant))) {
-                        //if there is an open spot, place the bar
-                        console.log(d.start + " placed in row " + i);
+                    // checks for overlap with current, next, and previous bars
+                    var currentOverlap = checkOverlap(d, currentGrant);
+                    var nextOverlap = !(nextGrant === undefined || !checkOverlap(d, nextGrant));
+                    var previousOverlap = !(previousGrant === undefined || !checkOverlap(d, previousGrant));
+                    
+                    if (!currentOverlap && !nextOverlap && !previousOverlap) {
+                        //open spot is found!
                         personalBarPositions[i].push(d);
-                        return (50 * i)
-                    } else {
-                        break;
-                    }
+                        return 50 * i
+                    } 
                 }
             }
 
         })
-        .attr("id", "personalBars")
+        .attr("id", "personal-bar")
         .attr("rx", 8)
         .attr("ry", 8)
         .attr("fill", function (d, i) {
@@ -210,6 +222,7 @@ d3.csv("funding.csv").then(function (data) {
         .attr("visibility", "hidden");
 
 
+    // calculates number of rows with personal bars
     var numberOfPersonalRows = personalBarPositions.length - personalBarPositions.filter(function (a) {
         return a.length === 0
     }).length
@@ -219,15 +232,49 @@ d3.csv("funding.csv").then(function (data) {
             var value = "translate(100,"
             var yValue = (numberOfLabRows + numberOfPersonalRows + 1) * 50;
             value += yValue + ")"
-            console.log(value)
             return value;
         })
         .attr("class", "axis")
         .call(axis);
 
+    var groups = ["Lab Grants", "Individual Grants"]
+    var legendGroup = canvas.append("g")
+        .attr("transform", "translate(0, 20)")
+
+    var legend = legendGroup.selectAll("#legend")
+        .data(groups)
+        .enter()
+        .append("g")
+        .attr("transform", function(d,i) {
+            var value = "translate(0,"
+            value +=  (30 * i) + ")"
+            console.log(value)
+            return value
+        })
+
+    var legendRect = legend.append("rect")
+        .attr("width", 20)
+        .attr("height", 20)
+        .attr("rx", 5)
+        .attr("ry", 5)
+        .attr("fill", function(d, i) {
+            var number = Math.random();
+            number = number < 0.2 ? number + 0.2 : number;
+            if(i == 0) {
+               return d3.interpolatePuBu(number);
+            }else {
+                return d3.interpolatePuRd(number);
+            }
+        })
+
+    var legendText = legend.append("text")
+        .attr("x", 30)
+        .attr("y", 14)
+        .text(function(d) {return d})
+
     //animations
 
-    d3.selectAll("#labBars")
+    d3.selectAll("#lab-bar")
         .transition()
         .ease(d3.easeElastic)
         .duration(function(d) {
@@ -239,7 +286,7 @@ d3.csv("funding.csv").then(function (data) {
         })
         .attr("visibility", "visible");
 
-    d3.selectAll("#personalBars")
+    d3.selectAll("#personal-bar")
         .transition()
         .ease(d3.easeElastic)
         .duration(function(d) {
@@ -253,7 +300,7 @@ d3.csv("funding.csv").then(function (data) {
 
 });
 
-
+// returns start and end dates of bar, which are then used to place them on the axis
 function getGrantBounds(grant) {
     var startPositionValue = grant.start;
     var duration = grant.duration;
@@ -265,23 +312,15 @@ function getGrantBounds(grant) {
     };
 }
 
+// checks to see if two bars overlap
 function checkOverlap(grant1, grant2) {
     var g1 = getGrantBounds(grant1);
     var g2 = getGrantBounds(grant2);
 
-    console.log("comparing " + grant1.start + " vs " + grant2.start);
-    if (g1.start <= g2.start) {
-        if (g1.end >= g2.start) {
-            console.log("overlap1")
-            return true;
-        }
-    } else if (g1.start >= g2.start) {
-        if (g1.start <= g2.end) {
-            console.log("overlap2")
-            return true;
-        }
-    }
-    return false;
+    var overlap_type1 = (g1.start <= g2.start && g1.end >= g2.start);
+    var overlap_type2 = (g1.start >= g2.start && g1.start <= g2.end);
+    
+    return overlap_type1 || overlap_type2;
 }
 
 Array.prototype.insert = function (index, item) {
