@@ -1,8 +1,8 @@
 d3.csv("funding.csv").then(function (data) {
 
     /* convert values into integers and format into more readable and usable form
-    *  yy/mm/dd date is converted into a single number 
-    */
+     *  yy/mm/dd date is converted into a single number 
+     */
     data.forEach(function (d) {
         d.duration = +d.duration;
         d.amount = +d.amount;
@@ -40,8 +40,8 @@ d3.csv("funding.csv").then(function (data) {
     var maxYear = Math.floor(d3.max(yearRange)) + 1;
 
     /* EDGE CASE
-    * get the ending date of the grant with the longest duration because it might go past maxYear
-    */
+     * get the ending date of the grant with the longest duration because it might go past maxYear
+     */
     var maxDurationEnd = Math.floor(getGrantBounds(importedGrants[0]).end);
 
     if (maxDurationEnd > maxYear) {
@@ -65,14 +65,32 @@ d3.csv("funding.csv").then(function (data) {
         .append("svg")
         .attr("width", width)
         .attr("height", height)
-        .attr("transform", "translate(20,0)");
+        .attr("transform", "translate(20,0)")
 
     // <g> element that holds all the lab bars
     var labChartBody = canvas.append("g")
         .attr("transform", "translate(100)")
         .attr("width", width)
         .attr("height", 500)
-        .attr("id", "lab-bars");
+        .attr("id", "lab-bars")
+
+
+    // Tooltips
+    var tooltipGroup = canvas.append("g")
+
+    var tooltipBody = tooltipGroup.append("rect")
+        .attr("opacity", 0.75)
+        .attr("rx", 8)
+        .attr("ry", 8)
+        .attr("fill", "grey")
+
+    var information = ["title", "source", "amount"]
+    var tooltipText = tooltipGroup.append("g")
+        .attr("id", "tooltip-text")
+        .selectAll("text")
+        .data(information)
+        .enter()
+        .append("text")
 
     // 2D array used to keep track of bar positions, used to check for overlaps
     var labBarPositions = []
@@ -118,12 +136,12 @@ d3.csv("funding.csv").then(function (data) {
                     var currentOverlap = checkOverlap(d, currentGrant);
                     var nextOverlap = !(nextGrant === undefined || !checkOverlap(d, nextGrant));
                     var previousOverlap = !(previousGrant === undefined || !checkOverlap(d, previousGrant));
-                    
+
                     if (!currentOverlap && !nextOverlap && !previousOverlap) {
                         //open spot is found!
                         labBarPositions[i].push(d);
                         return 50 + (50 * i)
-                    } 
+                    }
                 }
             }
 
@@ -137,10 +155,44 @@ d3.csv("funding.csv").then(function (data) {
 
             return d3.interpolatePuBu(number);
         })
-        .on("click", function(d) {
-            // do something on click
+        .on("mouseover", function(d) {
+            //make tooltip elements visible
+            tooltipBody.style("visibility", "visible");
+            tooltipText.style("visibility", "visible");
+         
+            //adjust size of tooltip depending on size of text
+            var tooltipData = [d.title, d.source, d.amount]
+
+            var maxWidth = 0
+            var maxHeight = 0
+            d3.select("#tooltip-text").selectAll("text")
+                .data(tooltipData)
+                .text(function(d) {
+                    return d;
+                })
+                .attr("y", function(d,i) {
+                    maxWidth = Math.max(maxWidth, this.getBBox().width)
+                    maxHeight += this.getBBox().height
+
+                    return (i+1)*20;
+                })
+                .enter()
+                .append("text");
+
+            tooltipBody
+                .attr("width", maxWidth + 20)
+                .attr("height", maxHeight + 25)
+
         })
-        .attr("visibility", "hidden");
+        .on("mousemove", function (d) {
+            //update element positions 
+            tooltipBody.attr("transform", "translate(" + (d3.event.pageX-20) + "," + (d3.event.pageY-30) + ")")
+            tooltipText.attr("transform", "translate(" + (d3.event.pageX-10) + "," + (d3.event.pageY-30) + ")")
+        })
+        .on("mouseout", function () {
+            tooltipBody.style("visibility", "hidden");
+            tooltipText.style("visibility", "hidden");
+        })
 
     // counts the number of rows that actually have bars placed in them
     var numberOfLabRows = labBarPositions.length - labBarPositions.filter(function (a) {
@@ -200,12 +252,12 @@ d3.csv("funding.csv").then(function (data) {
                     var currentOverlap = checkOverlap(d, currentGrant);
                     var nextOverlap = !(nextGrant === undefined || !checkOverlap(d, nextGrant));
                     var previousOverlap = !(previousGrant === undefined || !checkOverlap(d, previousGrant));
-                    
+
                     if (!currentOverlap && !nextOverlap && !previousOverlap) {
                         //open spot is found!
                         personalBarPositions[i].push(d);
                         return 50 * i
-                    } 
+                    }
                 }
             }
 
@@ -245,10 +297,9 @@ d3.csv("funding.csv").then(function (data) {
         .data(groups)
         .enter()
         .append("g")
-        .attr("transform", function(d,i) {
+        .attr("transform", function (d, i) {
             var value = "translate(0,"
-            value +=  (30 * i) + ")"
-            console.log(value)
+            value += (30 * i) + ")"
             return value
         })
 
@@ -257,12 +308,12 @@ d3.csv("funding.csv").then(function (data) {
         .attr("height", 20)
         .attr("rx", 5)
         .attr("ry", 5)
-        .attr("fill", function(d, i) {
+        .attr("fill", function (d, i) {
             var number = Math.random();
             number = number < 0.2 ? number + 0.2 : number;
-            if(i == 0) {
-               return d3.interpolatePuBu(number);
-            }else {
+            if (i == 0) {
+                return d3.interpolatePuBu(number);
+            } else {
                 return d3.interpolatePuRd(number);
             }
         })
@@ -270,14 +321,16 @@ d3.csv("funding.csv").then(function (data) {
     var legendText = legend.append("text")
         .attr("x", 30)
         .attr("y", 14)
-        .text(function(d) {return d})
+        .text(function (d) {
+            return d
+        })
 
     //animations
 
     d3.selectAll("#lab-bar")
         .transition()
         .ease(d3.easeElastic)
-        .duration(function(d) {
+        .duration(function (d) {
             return (Math.random() + 0.5) * 1500
         })
         .attr("x", function (d, i) {
@@ -289,7 +342,7 @@ d3.csv("funding.csv").then(function (data) {
     d3.selectAll("#personal-bar")
         .transition()
         .ease(d3.easeElastic)
-        .duration(function(d) {
+        .duration(function (d) {
             return (Math.random() + 0.5) * 1500
         })
         .attr("x", function (d, i) {
@@ -319,10 +372,14 @@ function checkOverlap(grant1, grant2) {
 
     var overlap_type1 = (g1.start <= g2.start && g1.end >= g2.start);
     var overlap_type2 = (g1.start >= g2.start && g1.start <= g2.end);
-    
+
     return overlap_type1 || overlap_type2;
 }
 
 Array.prototype.insert = function (index, item) {
     this.splice(index, 0, item);
+};
+
+d3.selection.prototype.first = function() {
+    return d3.select(this[0][0]);
 };
