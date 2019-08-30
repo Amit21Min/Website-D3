@@ -1,0 +1,10 @@
+name,time,image,position,bio
+Douglas Phanstiel,10,doug.png,PI,I'm the PI
+Katie Metz,9,katie.png,Graduate-Student,"I'm a third-year GMB student and member of the BCB Certificate Program. I study changes in chromatin looping, gene expression, histone modifications and protein binding during macrophages polarization, in the hopes of understanding how these events work together on a genome-wide level to change cell states."
+Erika Deodudes,8,erika.png,Data-Viz-Specialist,I create graphics to communicate the lab's interests and results with maximum clarity. I'm also contributing to the design and development of kinase visualization software.
+Eliza Thulson,7,eliza.png,Graduate-Student,I'm a rising second year student in the Genetics and Molecular Biology program. I am currently using CRISPR/Cas9-based methods to study the mechanisms of enhancer-mediated gene regulation during macrophage development and function.
+Eric Davis,6,eric.png,Graduate-Student,I'm a first-year student in the Bioinformatics and Computational Biology program. I am developing software to design and visualize probes to pull down genomic regions for Hi-C squared experiments.
+Marielle Bond,5,marielle.jpg,Lab-Manager,I facilitate research in the lab and develop cellular differentiation protocols to study gene regulation during development.
+Yoseli Quiroga,4,yoseli.jpg,Post-Doc,"I am studying transcription factor binding patterns associated with DNA looping formation and gene regulation during human immune cell development. I use CRISPR-based protein tagging, ChIP-seq, and in situ Hi-C technologies.."
+Robert Fisher,3,robert.png,Undergraduate-Student,I am a sophomore majoring in Biology. I use CRISPR-based genome editing technology to study gene regulation in human macrophages.
+Isha Sahasrabudhe,3,isha.png,Undergraduate-Student,I am a freshman majoring in Statistics with an interest in the application of analytical methods in biological sciences. I am assisting in the study of Jun1 gene deletion using CRISPR in addition to helping maintain the lab.

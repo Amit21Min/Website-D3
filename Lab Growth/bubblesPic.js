@@ -27,8 +27,6 @@ d3.csv("./labData.csv")
             })
             .style("opacity", .15);
 
-        
-
         // parse data
         data.forEach(function (d) {
             d.time = +d.time;

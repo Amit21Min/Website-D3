@@ -1,9 +1,21 @@
-d3.csv("funding.csv").then(function (data) {
+Promise.all([d3.csv("funding.csv"), d3.csv("labData.csv")]).then(function (files) {
 
+    var fundingData = files[0]
+    var labData = files[1]
+    var names = {}
     /* convert values into integers and format into more readable and usable form
      *  yy/mm/dd date is converted into a single number 
      */
-    data.forEach(function (d) {
+
+    labData.forEach(function (d) {
+        var fullName = d.name
+        var lastName = fullName.split(" ")[1]
+
+        names[lastName] = fullName
+    })
+
+    console.log(names)
+    fundingData.forEach(function (d) {
         d.duration = +d.duration;
         d.amount = +d.amount;
 
@@ -14,10 +26,16 @@ d3.csv("funding.csv").then(function (data) {
         var day = parseInt(startDate.slice(6, 8));
 
         d.start = year + (month / 12) + (day / 365) - (1 / 12) - (1 / 365);
+
+        if(d.person in names) {
+            d.person = names[d.person]
+        }
     });
 
+
+
     // grants sorted by duration so that larger bars will be placed higher up on the chart to create a "pyramid" look
-    var importedGrants = data.sort(function (a, b) {
+    var importedGrants = fundingData.sort(function (a, b) {
         return b.duration >= a.duration;
     })
 
@@ -49,7 +67,7 @@ d3.csv("funding.csv").then(function (data) {
     }
 
     var width = 1000;
-    var height = 1000;
+    var height = 500;
 
     // scale that maps a date value to a position along the x-axis 
     var widthScale = d3.scaleLinear()
@@ -73,13 +91,16 @@ d3.csv("funding.csv").then(function (data) {
         .attr("width", width)
         .attr("height", 500)
         .attr("id", "lab-bars")
-
+    
+    var personalChartBody = canvas.append("g")
+        .attr("width", width)
+        .attr("height", 500)
+        .attr("id", "personal-bars")
 
     // Tooltips
     var tooltipGroup = canvas.append("g")
 
     var tooltipBody = tooltipGroup.append("rect")
-        .attr("opacity", 0.75)
         .attr("rx", 8)
         .attr("ry", 8)
         .attr("fill", "grey")
@@ -146,7 +167,10 @@ d3.csv("funding.csv").then(function (data) {
             }
 
         })
-        .attr("id", "lab-bar")
+        .attr("id", function(d, i) {
+            return "bar-" + importedGrants.indexOf(d) 
+        })
+        .attr("class", "lab-bar")
         .attr("rx", 8)
         .attr("ry", 8)
         .attr("fill", function (d, i) {
@@ -155,61 +179,34 @@ d3.csv("funding.csv").then(function (data) {
 
             return d3.interpolatePuBu(number);
         })
-        .on("mouseover", function(d) {
-            //make tooltip elements visible
-            tooltipBody.style("visibility", "visible");
-            tooltipText.style("visibility", "visible");
-         
-            //adjust size of tooltip depending on size of text
+        .on("mouseover", function (d) {
             var tooltipData = [d.title, d.source, d.amount]
-
-            var maxWidth = 0
-            var maxHeight = 0
-            d3.select("#tooltip-text").selectAll("text")
-                .data(tooltipData)
-                .text(function(d) {
-                    return d;
-                })
-                .attr("y", function(d,i) {
-                    maxWidth = Math.max(maxWidth, this.getBBox().width)
-                    maxHeight += this.getBBox().height
-
-                    return (i+1)*20;
-                })
-                .enter()
-                .append("text");
-
-            tooltipBody
-                .attr("width", maxWidth + 20)
-                .attr("height", maxHeight + 25)
-
+            displayTooltip(tooltipData)
         })
         .on("mousemove", function (d) {
             //update element positions 
-            tooltipBody.attr("transform", "translate(" + (d3.event.pageX-20) + "," + (d3.event.pageY-30) + ")")
-            tooltipText.attr("transform", "translate(" + (d3.event.pageX-10) + "," + (d3.event.pageY-30) + ")")
+            tooltipBody.attr("transform", "translate(" + (d3.event.pageX - 20) + "," + (d3.event.pageY - 30) + ")")
+            tooltipText.attr("transform", "translate(" + (d3.event.pageX - 10) + "," + (d3.event.pageY - 30) + ")")
         })
         .on("mouseout", function () {
             tooltipBody.style("visibility", "hidden");
             tooltipText.style("visibility", "hidden");
         })
+        .on("click", manageClick)
+
 
     // counts the number of rows that actually have bars placed in them
     var numberOfLabRows = labBarPositions.length - labBarPositions.filter(function (a) {
         return a.length === 0
     }).length
 
-
     // translate the personal chart body depending on the number of lab bars
-    var personalChartBody = canvas.append("g")
-        .attr("transform", function () {
-            var value = "translate(100,"
-            var yValue = (numberOfLabRows + 1) * 50;
-            value += yValue + ")"
-            return value;
-        })
-        .attr("width", width)
-        .attr("height", 500);
+    personalChartBody.attr("transform", function () {
+        var value = "translate(100,"
+        var yValue = (numberOfLabRows + 1) * 50;
+        value += yValue + ")"
+        return value;
+    })  
 
     // same concept for person bars, 2D array to store and manage positions
     var personalBarPositions = []
@@ -262,7 +259,10 @@ d3.csv("funding.csv").then(function (data) {
             }
 
         })
-        .attr("id", "personal-bar")
+        .attr("id", function(d, i) {
+            return "bar-" + importedGrants.indexOf(d) 
+        })
+        .attr("class", "personal-bar")
         .attr("rx", 8)
         .attr("ry", 8)
         .attr("fill", function (d, i) {
@@ -271,8 +271,21 @@ d3.csv("funding.csv").then(function (data) {
 
             return d3.interpolatePuRd(number);
         })
-        .attr("visibility", "hidden");
-
+        .attr("visibility", "hidden")
+        .on("mouseover", function (d) {
+            var tooltipData = [d.title, d.source, d.amount]
+            displayTooltip(tooltipData)
+        })
+        .on("mousemove", function (d) {
+            //update element positions 
+            tooltipBody.attr("transform", "translate(" + (d3.event.pageX - 20) + "," + (d3.event.pageY - 30) + ")")
+            tooltipText.attr("transform", "translate(" + (d3.event.pageX - 10) + "," + (d3.event.pageY - 30) + ")")
+        })
+        .on("mouseout", function () {
+            tooltipBody.style("visibility", "hidden");
+            tooltipText.style("visibility", "hidden");
+        })
+        .on("click", manageClick)
 
     // calculates number of rows with personal bars
     var numberOfPersonalRows = personalBarPositions.length - personalBarPositions.filter(function (a) {
@@ -286,7 +299,7 @@ d3.csv("funding.csv").then(function (data) {
             value += yValue + ")"
             return value;
         })
-        .attr("class", "axis")
+        .attr("id", "axis")
         .call(axis);
 
     var groups = ["Lab Grants", "Individual Grants"]
@@ -327,7 +340,7 @@ d3.csv("funding.csv").then(function (data) {
 
     //animations
 
-    d3.selectAll("#lab-bar")
+    d3.selectAll(".lab-bar")
         .transition()
         .ease(d3.easeElastic)
         .duration(function (d) {
@@ -339,7 +352,7 @@ d3.csv("funding.csv").then(function (data) {
         })
         .attr("visibility", "visible");
 
-    d3.selectAll("#personal-bar")
+    d3.selectAll(".personal-bar")
         .transition()
         .ease(d3.easeElastic)
         .duration(function (d) {
@@ -350,6 +363,186 @@ d3.csv("funding.csv").then(function (data) {
             return widthScale(startDate);
         })
         .attr("visibility", "visible");
+
+
+    //-------------------------------MOUSE FUNCTIONS-------------------------------//
+
+    //tooltip function
+    function displayTooltip(data) {
+        //make tooltip elements visible
+        tooltipBody.style("visibility", "visible");
+        tooltipText.style("visibility", "visible");
+
+        //adjust size of tooltip depending on size of text
+        var maxWidth = 0
+        var maxHeight = 0
+        d3.select("#tooltip-text").selectAll("text")
+            .data(data)
+            .text(function (d) {
+                if (d > 0) { //if data is a number, add a dollar sign 
+                    return "$" + d.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+                }
+                return d;
+            })
+            .attr("y", function (d, i) {
+                maxWidth = Math.max(maxWidth, this.getBBox().width)
+                maxHeight += this.getBBox().height
+
+                return (i + 1) * 20;
+            })
+            .enter()
+            .append("text");
+
+        //adjust height and width of tooltip based on text
+        tooltipBody
+            .attr("width", maxWidth + 20)
+            .attr("height", maxHeight + 25)
+    }
+
+    function manageClick() {
+        var selectedGroup = d3.select(this)
+        var selectedID = "grant-group-" + selectedGroup.attr("id").slice(-1)
+        var selectedGroupYPos = parseInt(d3.select("#" + selectedID).attr("y"))
+        d3.selectAll(".grant-group").select(function() {
+            var currElement = d3.select(this)
+            if (currElement.attr("id") === selectedID) {
+                currElement.transition()
+                .attr("y", 0)
+            }else {
+                var currYPos = parseInt(currElement.attr("y"))
+                currElement.transition()
+                .attr("y", function() {
+                    if(currYPos < selectedGroupYPos) {
+                        return currYPos + 200
+                    }else {
+                        return currYPos
+                    }
+                })
+            }
+            
+        })
+    }
+
+    //-------------------------------------FUNDING INFO------------------------------------//
+
+    var fundInfoBody = d3.select("body").append("svg")
+        .attr("width", width)
+        .attr("height", height * 4)
+        .attr("transform", "translate(20, 0)")    
+
+    var defs = fundInfoBody.append("defs")
+    var people = []
+    labData.forEach(function(person) {
+        defs.append("pattern")
+            .attr("class", "images-pattern")
+            .attr("id", function() {
+                var lastName = person.name.split(/ /g)[1]
+                people.push(lastName)
+
+                return lastName
+            })
+            .attr("height", "100%")
+            .attr("width", "100%")
+            .attr("patternContentUnits", "objectBoundingBox")
+            .append("image")
+            .attr("height", 1)
+            .attr("width", 1)
+            .attr("preserveAspectRatio", "none")
+            .attr("xlink:href", "pics/" + person.image)
+    })
+
+    //unknown person def
+    defs.append("pattern")
+            .attr("class", "images-pattern")
+            .attr("id", "unknown")
+            .attr("height", "100%")
+            .attr("width", "100%")
+            .attr("patternContentUnits", "objectBoundingBox")
+            .append("image")
+            .attr("height", 1)
+            .attr("width", 1)
+            .attr("preserveAspectRatio", "none")
+            .attr("xlink:href", "pics/unknown-user.png")
+
+    fundInfoBody.selectAll("#info-group")
+        .data(importedGrants)
+        .enter()
+            .append("svg")
+                .attr("id", function(d, i) {
+                    return "grant-group-" + i
+                })
+                .attr("class", "grant-group")
+                .attr("width", 1000)
+                .attr("height", 150)
+                .attr("x", 80)
+                .attr("y", function(d, i) {
+                    return (i) * 200
+                })
+                // .append("rect")
+                // .attr("width", "100%")
+                // .attr("height", "100%")
+                // .attr("fill", "blue")
+                // .attr("opacity", 0.5)
+           
+    importedGrants.forEach(function(d, i) {
+
+        var currentGroup = d3.select("#grant-group-" + i)
+        currentGroup.append("circle")
+            .attr("r", width / 20)
+            .style("fill", function() {
+                var lastName = d.person.split(/ /g)[1]
+                if(people.includes(lastName)) {
+                    return "url(#" + lastName + ")"
+                }else {
+                    return "url(#unknown)"
+                }
+            })
+            .attr("cx", 50)
+            .attr("cy", 55)
+        
+        grantInformation = [d.subtitle, d.person, "", d.title, d.source, d.amount, d.duration]
+        currentGroup.selectAll("text")
+            .data(grantInformation)
+            .enter()
+            .append("text")
+            .attr("x", 115)
+            .attr("y", function(d, i) {
+                return 20 * (i+1) - 5
+            })
+            .text(function(d, i) {
+                if (i == 1) {
+                    return "Acquired by " + d
+                }
+                return d;
+            })
+            .style("font-family", "Verdana")
+            .style("font-size", function(d, i) {
+                return (i == 0) ? 20 : 12
+            })
+            .style("font-weight", function(d, i) {
+                return (i == 0) ? "bold" : "normal"
+            }) 
+        
+        // currentGroup.append("svg")
+        //     .attr("id", function(d, i) {
+        //         return "grant-" + i
+        //     })
+        //     .attr("x", function(d) {
+        //         return 170
+        //     })
+        //     .attr("y", function(d) {
+        //         return (i+1) * 200 - 50
+        //     })
+        //     .attr("width", 300)
+        //     .attr("height", 120)
+        //     .append("g")
+        //         .attr("grant-" + i + "-text")
+        //         .attr("")
+    })
+    
+    
+    
+        
 
 });
 
@@ -380,6 +573,6 @@ Array.prototype.insert = function (index, item) {
     this.splice(index, 0, item);
 };
 
-d3.selection.prototype.first = function() {
+d3.selection.prototype.first = function () {
     return d3.select(this[0][0]);
 };
