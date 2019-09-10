@@ -27,7 +27,7 @@ Promise.all([d3.csv("funding.csv"), d3.csv("labData.csv")]).then(function (files
 
         d.start = year + (month / 12) + (day / 365) - (1 / 12) - (1 / 365);
 
-        if(d.person in names) {
+        if (d.person in names) {
             d.person = names[d.person]
         }
     });
@@ -85,13 +85,35 @@ Promise.all([d3.csv("funding.csv"), d3.csv("labData.csv")]).then(function (files
         .attr("height", height)
         .attr("transform", "translate(20,0)")
 
+    var defs = canvas.append("defs");
+
+    var filter = defs.append("filter")
+        .attr("id", "dropshadow")
+
+    filter.append("feGaussianBlur")
+        .attr("in", "SourceAlpha")
+        .attr("stdDeviation", 3)
+        .attr("result", "blur");
+    filter.append("feOffset")
+        .attr("in", "blur")
+        .attr("dx", 2)
+        .attr("dy", 2)
+        .attr("result", "offsetBlur");
+
+    var feMerge = filter.append("feMerge");
+
+    feMerge.append("feMergeNode")
+        .attr("in", "offsetBlur")
+    feMerge.append("feMergeNode")
+        .attr("in", "SourceGraphic");
+
     // <g> element that holds all the lab bars
     var labChartBody = canvas.append("g")
         .attr("transform", "translate(100)")
         .attr("width", width)
         .attr("height", 500)
         .attr("id", "lab-bars")
-    
+
     var personalChartBody = canvas.append("g")
         .attr("width", width)
         .attr("height", 500)
@@ -103,7 +125,8 @@ Promise.all([d3.csv("funding.csv"), d3.csv("labData.csv")]).then(function (files
     var tooltipBody = tooltipGroup.append("rect")
         .attr("rx", 8)
         .attr("ry", 8)
-        .attr("fill", "grey")
+        .attr("fill", "#edf4ff")
+        .attr("filter", "url(#dropshadow)");
 
     var information = ["title", "source", "amount"]
     var tooltipText = tooltipGroup.append("g")
@@ -167,8 +190,8 @@ Promise.all([d3.csv("funding.csv"), d3.csv("labData.csv")]).then(function (files
             }
 
         })
-        .attr("id", function(d, i) {
-            return "bar-" + importedGrants.indexOf(d) 
+        .attr("id", function (d, i) {
+            return "bar-" + importedGrants.indexOf(d)
         })
         .attr("class", "lab-bar")
         .attr("rx", 8)
@@ -206,7 +229,7 @@ Promise.all([d3.csv("funding.csv"), d3.csv("labData.csv")]).then(function (files
         var yValue = (numberOfLabRows + 1) * 50;
         value += yValue + ")"
         return value;
-    })  
+    })
 
     // same concept for person bars, 2D array to store and manage positions
     var personalBarPositions = []
@@ -259,8 +282,8 @@ Promise.all([d3.csv("funding.csv"), d3.csv("labData.csv")]).then(function (files
             }
 
         })
-        .attr("id", function(d, i) {
-            return "bar-" + importedGrants.indexOf(d) 
+        .attr("id", function (d, i) {
+            return "bar-" + importedGrants.indexOf(d)
         })
         .attr("class", "personal-bar")
         .attr("rx", 8)
@@ -403,23 +426,23 @@ Promise.all([d3.csv("funding.csv"), d3.csv("labData.csv")]).then(function (files
         var selectedGroup = d3.select(this)
         var selectedID = "grant-group-" + selectedGroup.attr("id").slice(-1)
         var selectedGroupYPos = parseInt(d3.select("#" + selectedID).attr("y"))
-        d3.selectAll(".grant-group").select(function() {
+        d3.selectAll(".grant-group").select(function () {
             var currElement = d3.select(this)
             if (currElement.attr("id") === selectedID) {
                 currElement.transition()
-                .attr("y", 0)
-            }else {
+                    .attr("y", 0)
+            } else {
                 var currYPos = parseInt(currElement.attr("y"))
                 currElement.transition()
-                .attr("y", function() {
-                    if(currYPos < selectedGroupYPos) {
-                        return currYPos + 200
-                    }else {
-                        return currYPos
-                    }
-                })
+                    .attr("y", function () {
+                        if (currYPos < selectedGroupYPos) {
+                            return currYPos + 200
+                        } else {
+                            return currYPos
+                        }
+                    })
             }
-            
+
         })
     }
 
@@ -428,14 +451,14 @@ Promise.all([d3.csv("funding.csv"), d3.csv("labData.csv")]).then(function (files
     var fundInfoBody = d3.select("body").append("svg")
         .attr("width", width)
         .attr("height", height * 4)
-        .attr("transform", "translate(20, 0)")    
+        .attr("transform", "translate(20, 0)")
 
     var defs = fundInfoBody.append("defs")
     var people = []
-    labData.forEach(function(person) {
+    labData.forEach(function (person) {
         defs.append("pattern")
             .attr("class", "images-pattern")
-            .attr("id", function() {
+            .attr("id", function () {
                 var lastName = person.name.split(/ /g)[1]
                 people.push(lastName)
 
@@ -453,76 +476,77 @@ Promise.all([d3.csv("funding.csv"), d3.csv("labData.csv")]).then(function (files
 
     //unknown person def
     defs.append("pattern")
-            .attr("class", "images-pattern")
-            .attr("id", "unknown")
-            .attr("height", "100%")
-            .attr("width", "100%")
-            .attr("patternContentUnits", "objectBoundingBox")
-            .append("image")
-            .attr("height", 1)
-            .attr("width", 1)
-            .attr("preserveAspectRatio", "none")
-            .attr("xlink:href", "pics/unknown-user.png")
+        .attr("class", "images-pattern")
+        .attr("id", "unknown")
+        .attr("height", "100%")
+        .attr("width", "100%")
+        .attr("patternContentUnits", "objectBoundingBox")
+        .append("image")
+        .attr("height", 1)
+        .attr("width", 1)
+        .attr("preserveAspectRatio", "none")
+        .attr("xlink:href", "pics/unknown-user.png")
 
     fundInfoBody.selectAll("#info-group")
         .data(importedGrants)
         .enter()
-            .append("svg")
-                .attr("id", function(d, i) {
-                    return "grant-group-" + i
-                })
-                .attr("class", "grant-group")
-                .attr("width", 1000)
-                .attr("height", 150)
-                .attr("x", 80)
-                .attr("y", function(d, i) {
-                    return (i) * 200
-                })
-                // .append("rect")
-                // .attr("width", "100%")
-                // .attr("height", "100%")
-                // .attr("fill", "blue")
-                // .attr("opacity", 0.5)
-           
-    importedGrants.forEach(function(d, i) {
+        .append("svg")
+        .attr("id", function (d, i) {
+            return "grant-group-" + i
+        })
+        .attr("class", "grant-group")
+        .attr("width", 1000)
+        .attr("height", 150)
+        .attr("x", 80)
+        .attr("y", function (d, i) {
+            return (i) * 200
+        })
+    // .append("rect")
+    // .attr("width", "100%")
+    // .attr("height", "100%")
+    // .attr("fill", "blue")
+    // .attr("opacity", 0.5)
+
+    importedGrants.forEach(function (d, i) {
 
         var currentGroup = d3.select("#grant-group-" + i)
         currentGroup.append("circle")
             .attr("r", width / 20)
-            .style("fill", function() {
+            .style("fill", function () {
                 var lastName = d.person.split(/ /g)[1]
-                if(people.includes(lastName)) {
+                if (people.includes(lastName)) {
                     return "url(#" + lastName + ")"
-                }else {
+                } else {
                     return "url(#unknown)"
                 }
             })
             .attr("cx", 50)
-            .attr("cy", 55)
-        
-        grantInformation = [d.subtitle, d.person, "", d.title, d.source, d.amount, d.duration]
+            .attr("cy", 60)
+
+        grantInformation = [d.subtitle, d.person, "", "Title: " + d.title, "Source: " + d.source, "Amount: $" + d.amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","), "Duration: " + d.duration]
         currentGroup.selectAll("text")
             .data(grantInformation)
             .enter()
             .append("text")
-            .attr("x", 115)
-            .attr("y", function(d, i) {
-                return 20 * (i+1) - 5
+            .attr("x", 130)
+            .attr("y", function (d, i) {
+                return 20 * (i + 1) - 5
             })
-            .text(function(d, i) {
+            .text(function (d, i) {
                 if (i == 1) {
                     return "Acquired by " + d
                 }
+
                 return d;
             })
             .style("font-family", "Verdana")
-            .style("font-size", function(d, i) {
+            .style("font-size", function (d, i) {
                 return (i == 0) ? 20 : 12
             })
-            .style("font-weight", function(d, i) {
+            .style("font-weight", function (d, i) {
                 return (i == 0) ? "bold" : "normal"
-            }) 
-        
+            })
+
         // currentGroup.append("svg")
         //     .attr("id", function(d, i) {
         //         return "grant-" + i
@@ -539,10 +563,10 @@ Promise.all([d3.csv("funding.csv"), d3.csv("labData.csv")]).then(function (files
         //         .attr("grant-" + i + "-text")
         //         .attr("")
     })
-    
-    
-    
-        
+
+
+
+
 
 });
 
